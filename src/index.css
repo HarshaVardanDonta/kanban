@@ -11,3 +11,41 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+  margin: auto;
+}
+
+button {
+  padding: 10px;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+}
+
+.kanban-stage {
+  flex: 1;
+  background: #f4f4f4;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.kanban-card {
+  background: #fff;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  cursor: grab;
+}
+
