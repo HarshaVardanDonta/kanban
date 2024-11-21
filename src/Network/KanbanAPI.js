@@ -15,12 +15,13 @@ const kanbanAPI = {
         }
   
         const data = await response.json();
+        console.log("stages fetch data ", data)
   
         // Transform API response to match the Kanban board's structure
         const stages = data.map((stage) => ({
           id: stage.id.toString(), // Ensure id is a string
           title: stage.name,
-          cards: stage.cards, // Initialize with an empty cards array
+          cards: stage.cards || []
         }));
         console.log(stages);
   
@@ -43,8 +44,8 @@ const kanbanAPI = {
         },
         body: JSON.stringify({ name }) // Send the stage name in the request body
       });
-
       const data = await response.json();
+      console.log(data);
       return data; // Return the new stage data if successful
     } catch (e) {
       console.error("Failed to add stage:", e);

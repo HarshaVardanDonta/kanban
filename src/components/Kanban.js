@@ -32,17 +32,17 @@ const handleDrop = async (card, toStageId) => {
     // Update the card's stage
     const updatedCard = { ...card, stage: { id: toStageId } };
     
-    const response = await fetch(`http://localhost:8055/api/cards/${card.id}`, {
+    const response = await fetch(`http://localhost:8055/api/Cards/${card.id}/${toStageId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + localStorage.getItem("token")
       },
-      body: JSON.stringify(updatedCard),
     });
 
     const updatedCardData = await response.json();
     console.log("Updated Card:", updatedCardData);
+    
 
     // After successful update, refetch the stages to update the UI
     fetchStages();
@@ -74,6 +74,48 @@ const handleDrop = async (card, toStageId) => {
     );
   };
 
+  const deleteStage = async (stageId) => {
+    try {
+      const response = await fetch(`http://localhost:8055/api/stages/${stageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+  
+      if (response.ok) {
+        console.log(`Stage ${stageId} deleted successfully`);
+        fetchStages(); // Refetch stages to update the UI
+      } else {
+        console.error(`Failed to delete stage ${stageId}`);
+      }
+    } catch (error) {
+      console.error("Error deleting stage:", error);
+    }
+  };
+
+
+  const deleteCard = async (cardId) => {
+    try {
+      const response = await fetch(`http://localhost:8055/api/Cards/${cardId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+  
+      if (response.ok) {
+        console.log(`Card ${cardId} deleted successfully`);
+        // Refetch stages to update UI or optimistically remove the card
+        fetchStages();
+      } else {
+        console.error(`Failed to delete card ${cardId}`);
+      }
+    } catch (error) {
+      console.error("Error deleting card:", error);
+    }
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div>
@@ -85,6 +127,10 @@ const handleDrop = async (card, toStageId) => {
               stage={stage}
               onDrop={handleDrop}
               onUpdateTitle={updateStageTitle}
+              handleDelete={deleteCard}
+              fetchStages={fetchStages}
+              handleDeleteStage={deleteStage}
+              
             />
           ))}
         </div>
@@ -105,7 +151,7 @@ const handleDrop = async (card, toStageId) => {
   );
 };
 
-const Stage = ({ stage, onDrop, onUpdateTitle }) => {
+const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handleDeleteStage  }) => {
   const [, drop] = useDrop({
     accept: 'CARD',
     drop: (item) => onDrop(item, stage.id),
@@ -114,6 +160,9 @@ const Stage = ({ stage, onDrop, onUpdateTitle }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(stage.title);
 
+  const [newCardTitle, setNewCardTitle] = useState('');
+  const [newCardDesc, setNewCardDesc] = useState('');
+
   const handleTitleChange = (e) => {
     setTitle(e.target.value);
   };
@@ -121,6 +170,39 @@ const Stage = ({ stage, onDrop, onUpdateTitle }) => {
   const saveTitle = () => {
     setIsEditing(false);
     onUpdateTitle(stage.id, title);
+  };
+
+  const addNewCard = async () => {
+    if (!newCardTitle.trim() || !newCardDesc.trim()) {
+      alert("Title and Description are required to add a card!");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8055/api/Cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          title: newCardTitle,
+          description: newCardDesc,
+          stage: { id: stage.id },
+        }),
+      });
+
+      if (response.ok) {
+        console.log("Card added successfully!");
+        setNewCardTitle('');
+        setNewCardDesc('');
+        fetchStages();
+      } else {
+        console.error("Failed to add card:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error adding card:", error);
+    }
   };
 
   return (
@@ -134,13 +216,85 @@ const Stage = ({ stage, onDrop, onUpdateTitle }) => {
             onBlur={saveTitle}
             autoFocus
           />
+          <button onClick={() => setIsEditing(false)}>Save</button>
         </div>
       ) : (
         <h3 onDoubleClick={() => setIsEditing(true)}>{stage.title}</h3>
       )}
+
+      {/* Render cards */}
+      <div className="kanban-cards">
+         {(stage.cards || []).map((card) => (
+    <Card key={card.id} card={card} onDelete={() => handleDelete(card.id)} />
+  ))}
+      </div>
+
+      {/* Add new card */}
+      <div className="add-card">
+        <input
+          type="text"
+          placeholder="Card Title"
+          value={newCardTitle}
+          onChange={(e) => setNewCardTitle(e.target.value)}
+        />
+        <textarea
+          placeholder="Card Description"
+          value={newCardDesc}
+          onChange={(e) => setNewCardDesc(e.target.value)}
+        />
+        <button onClick={addNewCard}>Add Card</button>
+      </div>
+
+         {/* Delete Stage Button */}
+         <button
+        onClick={() => handleDeleteStage(stage.id)}
+        style={{
+          background: 'red',
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+          marginTop: '10px',
+        }}
+      >
+        Delete Stage
+      </button>
       
     </div>
   );
 };
+
+
+const Card = ({ card, onDelete }) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'CARD',
+    item: card,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  return (
+    <div
+      ref={drag}
+      className="kanban-card"
+      style={{
+        opacity: isDragging ? 0.5 : 1,
+        cursor: 'move',
+      }}
+    >
+      <h4>{card.title}</h4>
+      <p>{card.description}</p>
+      {/* Delete Button */}
+      <button
+        onClick={() => {onDelete()}}
+        style={{ background: 'red', color: 'white', border: 'none', cursor: 'pointer' }}
+      >
+        Delete
+      </button>
+    </div>
+  );
+};
+
+
 
 export default Kanban;
