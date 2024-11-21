@@ -1,6 +1,6 @@
 const kanbanAPI = {
     async getStages() {
-      const url = "http://localhost:8055/api/stages";
+      const url = "http://localhost:8055/api/stages/userSpecific";
       try {
         const response = await fetch(url, {
           method: "GET",
