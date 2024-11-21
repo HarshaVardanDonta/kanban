@@ -120,6 +120,16 @@ const handleDrop = async (card, toStageId) => {
     <DndProvider backend={HTML5Backend}>
       <div>
         <h2>Kanban Board</h2>
+          {/* Add new stage */}
+          <div className="kanban-stage">
+          <input
+            type="text"
+            placeholder="New stage title"
+            value={newStageTitle}
+            onChange={(e) => setNewStageTitle(e.target.value)}
+          />
+          <button onClick={addNewStage}>Add Stage</button>
+        </div>
         <div className="kanban-board">
           {stages.map((stage) => (
             <Stage
@@ -135,16 +145,7 @@ const handleDrop = async (card, toStageId) => {
           ))}
         </div>
 
-        {/* Add new stage */}
-        <div className="add-stage">
-          <input
-            type="text"
-            placeholder="New stage title"
-            value={newStageTitle}
-            onChange={(e) => setNewStageTitle(e.target.value)}
-          />
-          <button onClick={addNewStage}>Add Stage</button>
-        </div>
+      
 
       </div>
     </DndProvider>
@@ -230,7 +231,7 @@ const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handle
       </div>
 
       {/* Add new card */}
-      <div className="add-card">
+      <div className="kanban-card">
         <input
           type="text"
           placeholder="Card Title"
