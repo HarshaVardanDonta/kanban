@@ -26,30 +26,30 @@ const Kanban = () => {
   const [newStageTitle, setNewStageTitle] = useState('');
 
 
-// Handle dropping a card into a stage
-const handleDrop = async (card, toStageId) => {
-  try {
-    // Update the card's stage
-    const updatedCard = { ...card, stage: { id: toStageId } };
-    
-    const response = await fetch(`http://localhost:8055/api/Cards/${card.id}/${toStageId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem("token")
-      },
-    });
+  // Handle dropping a card into a stage
+  const handleDrop = async (card, toStageId) => {
+    try {
+      // Update the card's stage
+      const updatedCard = { ...card, stage: { id: toStageId } };
 
-    const updatedCardData = await response.json();
-    console.log("Updated Card:", updatedCardData);
-    
+      const response = await fetch(`http://localhost:8055/api/Cards/${card.id}/${toStageId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem("token")
+        },
+      });
 
-    // After successful update, refetch the stages to update the UI
-    fetchStages();
-  } catch (error) {
-    console.error("Error updating card:", error);
-  }
-};
+      const updatedCardData = await response.json();
+      console.log("Updated Card:", updatedCardData);
+
+
+      // After successful update, refetch the stages to update the UI
+      fetchStages();
+    } catch (error) {
+      console.error("Error updating card:", error);
+    }
+  };
 
 
   // Add a new stage
@@ -82,7 +82,7 @@ const handleDrop = async (card, toStageId) => {
           'Authorization': `Bearer ${localStorage.getItem("token")}`,
         },
       });
-  
+
       if (response.ok) {
         console.log(`Stage ${stageId} deleted successfully`);
         fetchStages(); // Refetch stages to update the UI
@@ -103,7 +103,7 @@ const handleDrop = async (card, toStageId) => {
           'Authorization': `Bearer ${localStorage.getItem("token")}`,
         },
       });
-  
+
       if (response.ok) {
         console.log(`Card ${cardId} deleted successfully`);
         // Refetch stages to update UI or optimistically remove the card
@@ -120,8 +120,8 @@ const handleDrop = async (card, toStageId) => {
     <DndProvider backend={HTML5Backend}>
       <div>
         <h2>Kanban Board</h2>
-          {/* Add new stage */}
-          <div className="kanban-stage">
+        {/* Add new stage */}
+        <div className="kanban-stage">
           <input
             type="text"
             placeholder="New stage title"
@@ -140,19 +140,19 @@ const handleDrop = async (card, toStageId) => {
               handleDelete={deleteCard}
               fetchStages={fetchStages}
               handleDeleteStage={deleteStage}
-              
+
             />
           ))}
         </div>
 
-      
+
 
       </div>
     </DndProvider>
   );
 };
 
-const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handleDeleteStage  }) => {
+const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handleDeleteStage }) => {
   const [, drop] = useDrop({
     accept: 'CARD',
     drop: (item) => onDrop(item, stage.id),
@@ -225,9 +225,9 @@ const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handle
 
       {/* Render cards */}
       <div className="kanban-cards">
-         {(stage.cards || []).map((card) => (
-    <Card key={card.id} card={card} onDelete={() => handleDelete(card.id)} />
-  ))}
+        {(stage.cards || []).map((card) => (
+          <Card key={card.id} card={card} onDelete={() => handleDelete(card.id)} fetchStages={fetchStages} />
+        ))}
       </div>
 
       {/* Add new card */}
@@ -246,8 +246,8 @@ const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handle
         <button onClick={addNewCard}>Add Card</button>
       </div>
 
-         {/* Delete Stage Button */}
-         <button
+      {/* Delete Stage Button */}
+      <button
         onClick={() => handleDeleteStage(stage.id)}
         style={{
           background: 'red',
@@ -259,13 +259,13 @@ const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handle
       >
         Delete Stage
       </button>
-      
+
     </div>
   );
 };
 
 
-const Card = ({ card, onDelete }) => {
+const Card = ({ card, onDelete, fetchStages }) => {
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
     item: card,
@@ -274,6 +274,38 @@ const Card = ({ card, onDelete }) => {
     }),
   });
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(card.title);
+  const [editedDescription, setEditedDescription] = useState(card.description);
+
+  // Function to handle editing the card
+  const handleCardEdit = async () => {
+    try {
+      const response = await fetch(`http://localhost:8055/api/Cards/updateCard`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          id: card.id,
+          title: editedTitle,
+          description: editedDescription,
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`Card ${card.id} updated successfully!`);
+        setIsEditing(false); // Exit editing mode
+        fetchStages();
+      } else {
+        console.error(`Failed to update card ${card.id}:`, response.statusText);
+      }
+    } catch (error) {
+      console.error(`Error updating card ${card.id}:`, error);
+    }
+  };
+
   return (
     <div
       ref={drag}
@@ -281,13 +313,40 @@ const Card = ({ card, onDelete }) => {
       style={{
         opacity: isDragging ? 0.5 : 1,
         cursor: 'move',
+        padding: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        marginBottom: '10px',
       }}
     >
-      <h4>{card.title}</h4>
-      <p>{card.description}</p>
-      {/* Delete Button */}
+      {isEditing ? (
+        <div>
+          <input
+            type="text"
+            value={editedTitle}
+            onChange={(e) => setEditedTitle(e.target.value)}
+            placeholder="Edit Title"
+            style={{ marginBottom: '5px', width: '100%' }}
+          />
+          <textarea
+            value={editedDescription}
+            onChange={(e) => setEditedDescription(e.target.value)}
+            placeholder="Edit Description"
+            style={{ marginBottom: '5px', width: '100%' }}
+          />
+          <button onClick={handleCardEdit} style={{ marginRight: '5px' }}>
+            Save
+          </button>
+          <button onClick={() => setIsEditing(false)}>Cancel</button>
+        </div>
+      ) : (
+        <div>
+          <h4 onDoubleClick={() => setIsEditing(true)}>{card.title}</h4>
+          <p onDoubleClick={() => setIsEditing(true)}>{card.description}</p>
+        </div>
+      )}
       <button
-        onClick={() => {onDelete()}}
+        onClick={onDelete}
         style={{ background: 'red', color: 'white', border: 'none', cursor: 'pointer' }}
       >
         Delete
