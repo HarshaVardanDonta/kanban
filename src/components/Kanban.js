@@ -65,15 +65,6 @@ const Kanban = () => {
     }
   };
 
-
-  const updateStageTitle = (id, newTitle) => {
-    setStages((prev) =>
-      prev.map((stage) =>
-        stage.id === id ? { ...stage, title: newTitle } : stage
-      )
-    );
-  };
-
   const deleteStage = async (stageId) => {
     try {
       const response = await fetch(`http://localhost:8055/api/stages/${stageId}`, {
@@ -136,7 +127,6 @@ const Kanban = () => {
               key={stage.id}
               stage={stage}
               onDrop={handleDrop}
-              onUpdateTitle={updateStageTitle}
               handleDelete={deleteCard}
               fetchStages={fetchStages}
               handleDeleteStage={deleteStage}
@@ -152,7 +142,7 @@ const Kanban = () => {
   );
 };
 
-const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handleDeleteStage }) => {
+const Stage = ({ stage, onDrop, handleDelete, fetchStages, handleDeleteStage }) => {
   const [, drop] = useDrop({
     accept: 'CARD',
     drop: (item) => onDrop(item, stage.id),
@@ -164,13 +154,40 @@ const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handle
   const [newCardTitle, setNewCardTitle] = useState('');
   const [newCardDesc, setNewCardDesc] = useState('');
 
-  const handleTitleChange = (e) => {
+  const handleTitleChange = async (e) => {
     setTitle(e.target.value);
+    console.log(e.target.value)
   };
+
+  const updateStageTitle = async () => {
+    console.log("clicked")
+    try {
+      const response = await fetch(`http://localhost:8055/api/stages/updateStage`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          id: stage.id,
+          name: title
+        }),
+      });
+
+      if (response.ok) {
+        console.log(`Stage ${stage.id} updated successfully!`);
+        setIsEditing(false); // Exit editing mode
+        fetchStages();
+      } else {
+        console.error(`Failed to update stage ${stage.id}:`, response.statusText);
+      }
+    } catch (error) {
+      console.error(`Error updating stage ${stage.id}:`, error);
+    }
+  }
 
   const saveTitle = () => {
     setIsEditing(false);
-    onUpdateTitle(stage.id, title);
   };
 
   const addNewCard = async () => {
@@ -214,13 +231,16 @@ const Stage = ({ stage, onDrop, onUpdateTitle, handleDelete, fetchStages, handle
             type="text"
             value={title}
             onChange={handleTitleChange}
-            onBlur={saveTitle}
             autoFocus
           />
-          <button onClick={() => setIsEditing(false)}>Save</button>
+          <button onClick={() => {
+updateStageTitle();
+          }}>Save</button>
         </div>
       ) : (
-        <h3 onDoubleClick={() => setIsEditing(true)}>{stage.title}</h3>
+        <h3 onDoubleClick={() => { setIsEditing(true); console.log('Editing mode:', true); }}>
+          {stage.title}
+        </h3>
       )}
 
       {/* Render cards */}
@@ -313,10 +333,6 @@ const Card = ({ card, onDelete, fetchStages }) => {
       style={{
         opacity: isDragging ? 0.5 : 1,
         cursor: 'move',
-        padding: '10px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        marginBottom: '10px',
       }}
     >
       {isEditing ? (
