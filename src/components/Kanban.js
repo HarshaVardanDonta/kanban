@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import kanbanAPI from '../Network/KanbanAPI';
+import { FaPlus, FaTimes  } from 'react-icons/fa';
 
 const Kanban = () => {
   const [stages, setStages] = useState([]);
@@ -60,6 +61,7 @@ const Kanban = () => {
       setStages([...stages, newStage]);
       setNewStageTitle('');
       fetchStages();
+      setShowAddStagePopup(false);
     } catch (e) {
       console.error("Error adding new stage:", e);
     }
@@ -107,20 +109,84 @@ const Kanban = () => {
     }
   };
 
+  const [showAddStagePopup, setShowAddStagePopup] = useState(false); // Popup visibility state
+
+
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div>
-        <h2>Kanban Board</h2>
-        {/* Add new stage */}
-        <div className="kanban-stage">
-          <input
-            type="text"
-            placeholder="New stage title"
-            value={newStageTitle}
-            onChange={(e) => setNewStageTitle(e.target.value)}
-          />
-          <button onClick={addNewStage}>Add Stage</button>
+        <div className='kanban-header'>
+          <h2> Kanban Board</h2>
+
+          {/* Plus icon button to show the popup */}
+          <button
+          onClick={() => setShowAddStagePopup(true)}
+          style={{
+            backgroundColor: 'green',
+            width: 'fit-content',
+            height:'fit-content',
+            color: 'white',
+            borderRadius: '50px',
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer',
+            padding: '10px',
+            alignContent: 'center',
+            fontWeight: 'bold',
+            margin: '0px'
+          }}
+        >
+          Add Stage &nbsp;<FaPlus />
+        </button>
         </div>
+       
+
+        {/* Modal for adding a new stage */}
+        {showAddStagePopup && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>Add New Stage</h3>
+                
+                <button
+                  onClick={() => setShowAddStagePopup(false)}
+                  style={{
+                    backgroundColor: 'red',
+                    width: 'fit-content',
+                    height:'fit-content',
+                    color: 'white',
+                    borderRadius: '50px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    padding: '2px'
+                  }}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="New stage title"
+                value={newStageTitle}
+                onChange={(e) => setNewStageTitle(e.target.value)}
+                style={{ marginBottom: '10px', padding: '8px', width: '100%' }}
+              />
+              <button
+                onClick={addNewStage}
+                disabled={newStageTitle.length === 0}
+                style={{
+                  padding: '10px',
+                  cursor: newStageTitle.length === 0 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Add Stage
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="kanban-board">
           {stages.map((stage) => (
             <Stage
@@ -235,7 +301,7 @@ const Stage = ({ stage, onDrop, handleDelete, fetchStages, handleDeleteStage }) 
           />
           <button
             onClick={() => updateStageTitle()}
-            disabled={title.length == 0}
+            disabled={title ==null}
           >
             Save
           </button>

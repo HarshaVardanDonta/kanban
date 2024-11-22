@@ -178,3 +178,41 @@ h2 {
 .add-stage button:hover {
   background-color: #025aa5;
 }
+
+
+/* Style for the Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+ 
+}
+
+.modal-header{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kanban-header{
+  display: flex;
+  flex-direction: row;
+  gap: 50px;
+  align-items: center;
+  align-content: center;
+  align-self: center;
+  font-size: 30px;
+}
