@@ -233,9 +233,27 @@ const Stage = ({ stage, onDrop, handleDelete, fetchStages, handleDeleteStage }) 
             onChange={handleTitleChange}
             autoFocus
           />
-          <button onClick={() => {
-updateStageTitle();
-          }}>Save</button>
+          <button
+            onClick={() => updateStageTitle()}
+            disabled={title.length == 0}
+          >
+            Save
+          </button>
+          <button
+            style={{
+              background: 'red',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              marginTop: '10px',
+            }}
+            onClick={() => {
+              setTitle(stage.title);
+              setIsEditing(false);
+            }}
+          >
+            Cancel
+          </button>
         </div>
       ) : (
         <h3 onDoubleClick={() => { setIsEditing(true); console.log('Editing mode:', true); }}>
